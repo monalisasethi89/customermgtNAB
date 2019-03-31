@@ -24,6 +24,7 @@ import com.nab.assignment.customermanagement.service.CustomerManagementServiceIn
 @RestController
 public class CustomerController {
 
+	private static final String CUSTOMER_NOT_FOUND = "Customer not found";
 	@Autowired
 	CustomerManagementServiceIntf customerManagementServiceIntf;
 
@@ -31,7 +32,7 @@ public class CustomerController {
 	public ResponseEntity<CustomerDTO> retrieveCustomer(@PathVariable long id) throws CustomerNotFoundException {
 		CustomerDTO customer = customerManagementServiceIntf.retrieveCustomer(id);
 		if (customer.getCustomerId() == null)
-			throw new CustomerNotFoundException("Customer not found");
+			throw new CustomerNotFoundException(CUSTOMER_NOT_FOUND);
 		return new ResponseEntity<>(customer, HttpStatus.OK);
 	}
 
@@ -41,8 +42,7 @@ public class CustomerController {
 		if (customerManagementServiceIntf.isCustomerPresent(id))
 			customerManagementServiceIntf.deleteCustomer(id);
 		else
-			throw new CustomerNotFoundException("Customer not found");
-		customerManagementServiceIntf.deleteCustomer(id);
+			throw new CustomerNotFoundException(CUSTOMER_NOT_FOUND);
 		return new ResponseEntity<>(HttpStatus.ACCEPTED);
 	}
 
@@ -62,7 +62,7 @@ public class CustomerController {
 		return ResponseEntity.created(location).build();
 	}
 
-	@PutMapping(value = "/customer")
+	@PutMapping(value = "/customer", consumes = { "application/json" })
 	public ResponseEntity<CustomerDTO> updateCustomer(@RequestBody CustomerDTO customer)
 			throws CustomerNotFoundException, MandatoryParamMissingException {
 		if (customer.getCustomerId() == null)
@@ -70,7 +70,7 @@ public class CustomerController {
 		if (customerManagementServiceIntf.isCustomerPresent(customer.getCustomerId()))
 			customerManagementServiceIntf.updateCustomer(customer);
 		else
-			throw new CustomerNotFoundException("Customer not found");
+			throw new CustomerNotFoundException(CUSTOMER_NOT_FOUND);
 		return new ResponseEntity<>(customer, HttpStatus.OK);
 	}
 }

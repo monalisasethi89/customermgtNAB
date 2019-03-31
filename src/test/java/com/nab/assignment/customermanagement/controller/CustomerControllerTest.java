@@ -1,7 +1,5 @@
 package com.nab.assignment.customermanagement.controller;
 
-import static org.junit.Assert.fail;
-
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -27,18 +25,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @TestPropertySource(value = { "classpath:application.properties" })
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
-// @WebMvcTest(CustomerController.class)
 public class CustomerControllerTest {
 
-	/*
-	 * @Autowired private MockMvc mvc;
-	 */
+	private static final String LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER = "http://localhost:8080/CustomerManagement/customer";
+
+	private static final String BAD_REQUEST_MSG = "400 BAD_REQUEST";
+
 	@LocalServerPort
 	private int port;
-
-	/*
-	 * @MockBean CustomerManagementServiceIntf customerManagementServiceIntf;
-	 */
 
 	TestRestTemplate restTemplate = new TestRestTemplate();
 	HttpHeaders headers = new HttpHeaders();
@@ -63,20 +57,11 @@ public class CustomerControllerTest {
 		return "http://localhost:" + port + uri;
 	}
 
-	/*
-	 * @Test public void getEmployeeByIdAPI() throws Exception { mvc.perform(
-	 * MockMvcRequestBuilders.get("/CustomerManagement/customer/1000",
-	 * 1).accept(MediaType.APPLICATION_JSON))
-	 * .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").value("Nick")); }
-	 */
-
 	@Test
 	public void testRetrieveCustomerWhenCustomerNotFound() throws JSONException {
 		HttpEntity<String> entity = new HttpEntity<>(null, headers);
 		ResponseEntity<String> response = restTemplate.exchange(createURLWithPort("/CustomerManagement/customer/1001"),
 				HttpMethod.GET, entity, String.class);
-		System.out.println(response.getBody());
-		System.out.println(response.getStatusCode());
 		JSONAssert.assertEquals("{\"status\":404,\"message\":\"Customer not found\"}", response.getBody(), false);
 		Assert.assertEquals("404 NOT_FOUND", response.getStatusCode().toString());
 	}
@@ -86,47 +71,118 @@ public class CustomerControllerTest {
 		HttpEntity<String> entity = new HttpEntity<>(null, headers);
 		ResponseEntity<String> response = restTemplate.exchange(createURLWithPort("/CustomerManagement/customer/1001"),
 				HttpMethod.DELETE, entity, String.class);
-		System.out.println(response.getBody());
-		System.out.println(response.getStatusCode());
 		JSONAssert.assertEquals("{\"status\":404,\"message\":\"Customer not found\"}", response.getBody(), false);
 		Assert.assertEquals("404 NOT_FOUND", response.getStatusCode().toString());
 	}
 
 	@Test
-	public void testPostAndDeleteCustomer() throws JSONException, MalformedURLException, URISyntaxException {
-
+	public void testCreateCustomer() throws MalformedURLException, URISyntaxException {
 		String postBodyJson = "{\r\n" + "    \"firstName\": \"Rajni\",\r\n" + "    \"surName\": \"Minz\",\r\n"
 				+ "    \"sex\": \"Female\",\r\n" + "    \"maritalStatus\":\"single\",\r\n"
-				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\",\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n"
-				+ "}";
+				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
+				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
 		RequestEntity<String> requestEntity = RequestEntity
-				.post(new URL("http://localhost:8080/CustomerManagement/customer").toURI())
+				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
 				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
 		ResponseEntity<String> postResponse = restTemplate.exchange(requestEntity, String.class);
 		Assert.assertEquals("201 CREATED", postResponse.getStatusCode().toString());
-		// Assert.assertEquals("http://localhost:8080/CustomerManagement/customer/1",
-		// postResponse.getHeaders().get("Location"));
-		/*
-		 * HttpEntity<String> entity = new HttpEntity<>(null, headers);
-		 * ResponseEntity<String> response =
-		 * restTemplate.exchange(createURLWithPort("/CustomerManagement/customer/1"),
-		 * HttpMethod.DELETE, entity, String.class);
-		 * System.out.println(response.getBody());
-		 * System.out.println(response.getStatusCode());
-		 * JSONAssert.assertEquals("{\"status\":202,\"message\":\"Customer not found\"}"
-		 * , response.getBody(), false); Assert.assertEquals("202 Accepted",
-		 * response.getStatusCode().toString());
-		 */
 	}
 
 	@Test
-	public void testCreateCustomer() {
-		fail("Not yet implemented");
+	public void testCreateCustomerWithoutFirstName() throws JSONException, MalformedURLException, URISyntaxException {
+		String postBodyJson = "{\r\n" + "    \"surName\": \"Minz\",\r\n" + "    \"sex\": \"Female\",\r\n"
+				+ "    \"maritalStatus\":\"single\",\r\n"
+				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
+				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+		RequestEntity<String> requestEntity = RequestEntity
+				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'firstName' missing\"}",
+				response.getBody(), false);
+		Assert.assertEquals(BAD_REQUEST_MSG, response.getStatusCode().toString());
 	}
 
 	@Test
-	public void testUpdateCustomer() {
-		fail("Not yet implemented");
+	public void testCreateCustomerWithoutSurName() throws JSONException, MalformedURLException, URISyntaxException {
+		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"sex\": \"Female\",\r\n"
+				+ "    \"maritalStatus\":\"single\",\r\n"
+				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
+				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+		RequestEntity<String> requestEntity = RequestEntity
+				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'surName' missing\"}",
+				response.getBody(), false);
+		Assert.assertEquals(BAD_REQUEST_MSG, response.getStatusCode().toString());
+	}
+
+	@Test
+	public void testCreateCustomerWithoutSex() throws JSONException, MalformedURLException, URISyntaxException {
+		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"surName\": \"Hopkins\",\r\n"
+				+ "    \"maritalStatus\":\"single\",\r\n"
+				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
+				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+		RequestEntity<String> requestEntity = RequestEntity
+				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'sex' missing\"}",
+				response.getBody(), false);
+		Assert.assertEquals(BAD_REQUEST_MSG, response.getStatusCode().toString());
+	}
+
+	@Test
+	public void testCreateCustomerWithoutMailingAddress()
+			throws JSONException, MalformedURLException, URISyntaxException {
+		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"surName\": \"Hopkins\",\r\n"
+				+ "    \"sex\":\"Male\",\r\n" + "    \"maritalStatus\":\"single\"\r\n" + "}";
+		RequestEntity<String> requestEntity = RequestEntity
+				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'mailingAddress' missing\"}",
+				response.getBody(), false);
+		Assert.assertEquals(BAD_REQUEST_MSG, response.getStatusCode().toString());
+	}
+
+	@Test
+	public void testCreateAndDeleteCustomer() throws MalformedURLException, URISyntaxException {
+		String postBodyJson = "{\r\n" + "    \"firstName\": \"Rajni\",\r\n" + "    \"surName\": \"Minz\",\r\n"
+				+ "    \"sex\": \"Female\",\r\n" + "    \"maritalStatus\":\"single\",\r\n"
+				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
+				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+		RequestEntity<String> requestEntity = RequestEntity
+				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+		restTemplate.exchange(requestEntity, String.class);
+		HttpEntity<String> entity = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(createURLWithPort("/CustomerManagement/customer/1"),
+				HttpMethod.DELETE, entity, String.class);
+		Assert.assertEquals("202 ACCEPTED", response.getStatusCode().toString());
+	}
+
+	@Test
+	public void testUpdateCustomer() throws MalformedURLException, URISyntaxException {
+		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"surName\": \"Hopkins\",\r\n"
+				+ "    \"middleName\": \"James\",\r\n" + "    \"sex\": \"Female\",\r\n"
+				+ "    \"maritalStatus\":\"Married\",\r\n"
+				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
+				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"},\r\n" + "    \"customerId\": \"1000\"\r\n" + "}";
+		RequestEntity<String> requestEntity = RequestEntity
+				.put(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body("");
+		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+		Assert.assertEquals("200 OK", response.getStatusCode().toString());
+	}
+
+	@Test
+	public void testDeleteCustomerWhenCustomerFound() {
+		HttpEntity<String> entity = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(createURLWithPort("/CustomerManagement/customer/1002"),
+				HttpMethod.DELETE, entity, String.class);
+		Assert.assertEquals("202 ACCEPTED", response.getStatusCode().toString());
 	}
 
 }
