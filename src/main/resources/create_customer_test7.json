@@ -1,0 +1,16 @@
+{
+    "customerId": 1000,
+    "fullName": "Nick Hopkins",
+    "firstName": "Nick",
+    "surName": "Hopkins",
+    "mailingAddress": {
+        "unitNo": "2013",
+        "streetName": "Spencer Street",
+        "suburb": "Craigeburn",
+        "city": "Melbourne",
+        "state": "Victoria",
+        "country": "Australia",
+        "pinCode": "3000"
+    },
+    "sex": "Male"
+}

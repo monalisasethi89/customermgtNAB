@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.exception;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 public class MandatoryParamMissingException extends Exception {
 
 	private static final long serialVersionUID = 1L;

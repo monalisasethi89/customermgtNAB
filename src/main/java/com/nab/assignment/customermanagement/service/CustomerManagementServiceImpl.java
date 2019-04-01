@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.service;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +18,7 @@ import com.nab.assignment.customermanagement.entity.Customer;
 import com.nab.assignment.customermanagement.entity.CustomerAddress;
 import com.nab.assignment.customermanagement.enums.Gender;
 import com.nab.assignment.customermanagement.enums.MaritalStatus;
+import com.nab.assignment.customermanagement.exception.CreditRatingOutOfRangeException;
 import com.nab.assignment.customermanagement.exception.CustomerNotFoundException;
 
 @Service
@@ -25,8 +30,12 @@ public class CustomerManagementServiceImpl implements CustomerManagementServiceI
 	@Autowired
 	CustomerAddressRepository customerAddressDao;
 
+	private static final String N = "N";
+	private static final String Y = "Y";
+
 	@Override
-	public Long updateCustomer(CustomerDTO customerDto) throws CustomerNotFoundException {
+	public Long updateCustomer(CustomerDTO customerDto)
+			throws CustomerNotFoundException, CreditRatingOutOfRangeException {
 		Customer customer = new Customer();
 		customer.setId(customerDto.getCustomerId());
 		Customer updatedCustomer = prepareCustomerData(customerDto, customer);
@@ -34,17 +43,18 @@ public class CustomerManagementServiceImpl implements CustomerManagementServiceI
 	}
 
 	@Override
-	public Long createCustomer(CustomerDTO customerDto) {
+	public Long createCustomer(CustomerDTO customerDto) throws CreditRatingOutOfRangeException {
 		Customer customer = new Customer();
 		Customer newCustomer = prepareCustomerData(customerDto, customer);
 		return newCustomer.getId();
 	}
 
-	private Customer prepareCustomerData(CustomerDTO customerDto, Customer customer) {
-		customer.setCreditRating(customerDto.getCreditRating());
+	private Customer prepareCustomerData(CustomerDTO customerDto, Customer customer)
+			throws CreditRatingOutOfRangeException {
+		customer.setIsNabCustomer(customerDto.getIsNabCustomer() != null && customerDto.getIsNabCustomer() ? Y : N);
 		customer.setFirstName(customerDto.getFirstName());
-		customer.setInitials(customerDto.getInitials());
-		customer.setIsNabCustomer(customerDto.getIsNabCustomer());
+		customer.setCreditRating(populateCreditRating(customerDto.getCreditRating()));
+		customer.setInitials(populateInitials(customerDto));
 		customer.setMaritalStatus(getMaritalStatusCode(customerDto.getMaritalStatus()));
 		customer.setMiddleName(customerDto.getMiddleName());
 		customer.setSex(populateSex(customerDto.getSex()));
@@ -59,9 +69,29 @@ public class CustomerManagementServiceImpl implements CustomerManagementServiceI
 		address.setPinCode(customerDto.getMailingAddress().getPinCode());
 		address.setStreetName(customerDto.getMailingAddress().getStreetName());
 		address.setSuburb(customerDto.getMailingAddress().getSuburb());
+		address.setId(newCustomer.getId());
 		address.setCustomer(newCustomer);
 		customerAddressDao.save(address);
 		return newCustomer;
+	}
+
+	private Integer populateCreditRating(Integer creditRating) throws CreditRatingOutOfRangeException {
+		if (creditRating != null) {
+			if (creditRating > 0 && creditRating < 100)
+				return creditRating;
+			else
+				throw new CreditRatingOutOfRangeException("Credit Rating should be in the range of 0 to 100");
+		}
+		return creditRating;
+	}
+
+	private String populateInitials(CustomerDTO customerDto) {
+		StringBuilder initial = new StringBuilder();
+		initial.append(customerDto.getFirstName().charAt(0));
+		initial.append(
+				!Strings.isNullOrEmpty(customerDto.getMiddleName()) ? customerDto.getMiddleName().charAt(0) : "");
+		initial.append(customerDto.getSurName().charAt(0));
+		return initial.toString();
 	}
 
 	private String getMaritalStatusCode(String maritalStatus) {
@@ -106,14 +136,17 @@ public class CustomerManagementServiceImpl implements CustomerManagementServiceI
 			dto.setMaritalStatus(populateMaritalStatus(cust.getMaritalStatus()));
 			dto.setFirstName(cust.getFirstName());
 			dto.setInitials(cust.getInitials());
-			dto.setIsNabCustomer(cust.getIsNabCustomer());
+			dto.setIsNabCustomer(
+					!Strings.isNullOrEmpty(cust.getIsNabCustomer()) && cust.getIsNabCustomer().equalsIgnoreCase(Y)
+							? Boolean.TRUE
+							: Boolean.FALSE);
 			dto.setTitle(cust.getTitle());
 			dto.setSurName(cust.getSurName());
 			Optional<CustomerAddress> customerAddress = customerAddressDao.findById(cust.getId());
 			if (customerAddress.isPresent()) {
 				CustomerAddressDTO customerAddressDTO = new CustomerAddressDTO();
 				CustomerAddress custAddress = customerAddress.get();
-				customerAddressDTO.setUnitNo(custAddress.getCity());
+				customerAddressDTO.setUnitNo(custAddress.getUnitNo());
 				customerAddressDTO.setCity(custAddress.getCity());
 				customerAddressDTO.setCountry(custAddress.getCountry());
 				customerAddressDTO.setPinCode(custAddress.getPinCode());
@@ -150,6 +183,10 @@ public class CustomerManagementServiceImpl implements CustomerManagementServiceI
 
 	private String populateFullName(Customer cust) {
 		StringBuilder fName = new StringBuilder();
+		if (!Strings.isNullOrEmpty(cust.getTitle())) {
+			fName.append(cust.getTitle());
+			fName.append(" ");
+		}
 		fName.append(cust.getFirstName());
 		fName.append(" ");
 		if (!Strings.isNullOrEmpty(cust.getMiddleName())) {

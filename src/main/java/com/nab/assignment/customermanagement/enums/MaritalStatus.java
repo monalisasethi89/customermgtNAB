@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.enums;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 import java.io.Serializable;
 
 public enum MaritalStatus implements Serializable {

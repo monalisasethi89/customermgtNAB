@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.dto;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 public class CustomerAddressDTO {
 
 	private String unitNo;

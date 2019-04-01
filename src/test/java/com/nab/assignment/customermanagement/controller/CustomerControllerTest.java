@@ -1,9 +1,18 @@
 package com.nab.assignment.customermanagement.controller;
 
-import java.net.MalformedURLException;
+/**
+ * @author Monalisa Sethi
+ *
+ */
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,11 +33,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @TestPropertySource(value = { "classpath:application.properties" })
-@SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class CustomerControllerTest {
 
-	private static final String LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER = "http://localhost:8080/CustomerManagement/customer";
-
+	private static final String CUSTOMER_MANAGEMENT_CUSTOMER = "/CustomerManagement/customer";
+	private static final String HTTP_LOCALHOST = "http://localhost:";
 	private static final String BAD_REQUEST_MSG = "400 BAD_REQUEST";
 
 	@LocalServerPort
@@ -38,23 +47,18 @@ public class CustomerControllerTest {
 	HttpHeaders headers = new HttpHeaders();
 
 	@Test
-	public void testRetrieveCustomerWhenCustomerFound() throws JSONException {
+	public void testRetrieveCustomerWhenCustomerFound() throws JSONException, IOException {
 		HttpEntity<String> entity = new HttpEntity<>(null, headers);
 		ResponseEntity<String> response = restTemplate.exchange(createURLWithPort("/CustomerManagement/customer/1000"),
 				HttpMethod.GET, entity, String.class);
-		String expected = "{\r\n" + "    \"customerId\": 1000,\r\n" + "    \"fullName\": \"Nick Hopkins\",\r\n"
-				+ "    \"firstName\": \"Nick\",\r\n" + "    \"surName\": \"Hopkins\",\r\n"
-				+ "    \"mailingAddress\": {\r\n" + "        \"unitNo\": \"Melbourne\",\r\n"
-				+ "        \"streetName\": \"Spencer Street\",\r\n" + "        \"suburb\": \"Craigeburn\",\r\n"
-				+ "        \"city\": \"Melbourne\",\r\n" + "        \"state\": \"Victoria\",\r\n"
-				+ "        \"country\": \"Australia\",\r\n" + "        \"pinCode\": \"3000\"\r\n" + "    },\r\n"
-				+ "    \"sex\": \"Male\"\r\n" + "}";
-		JSONAssert.assertEquals(expected, response.getBody(), false);
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test7.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
+		JSONAssert.assertEquals(jsonTxt, response.getBody(), false);
 		Assert.assertEquals("200 OK", response.getStatusCode().toString());
 	}
 
 	private String createURLWithPort(String uri) {
-		return "http://localhost:" + port + uri;
+		return HTTP_LOCALHOST + port + uri;
 	}
 
 	@Test
@@ -76,27 +80,23 @@ public class CustomerControllerTest {
 	}
 
 	@Test
-	public void testCreateCustomer() throws MalformedURLException, URISyntaxException {
-		String postBodyJson = "{\r\n" + "    \"firstName\": \"Rajni\",\r\n" + "    \"surName\": \"Minz\",\r\n"
-				+ "    \"sex\": \"Female\",\r\n" + "    \"maritalStatus\":\"single\",\r\n"
-				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
-				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+	public void testCreateCustomer() throws URISyntaxException, IOException {
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test1.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
 		RequestEntity<String> requestEntity = RequestEntity
-				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
-				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+				.post(new URI(HTTP_LOCALHOST + port + CUSTOMER_MANAGEMENT_CUSTOMER))
+				.contentType(MediaType.APPLICATION_JSON).body(jsonTxt);
 		ResponseEntity<String> postResponse = restTemplate.exchange(requestEntity, String.class);
 		Assert.assertEquals("201 CREATED", postResponse.getStatusCode().toString());
 	}
 
 	@Test
-	public void testCreateCustomerWithoutFirstName() throws JSONException, MalformedURLException, URISyntaxException {
-		String postBodyJson = "{\r\n" + "    \"surName\": \"Minz\",\r\n" + "    \"sex\": \"Female\",\r\n"
-				+ "    \"maritalStatus\":\"single\",\r\n"
-				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
-				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+	public void testCreateCustomerWithoutFirstName() throws JSONException, URISyntaxException, IOException {
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test2.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
 		RequestEntity<String> requestEntity = RequestEntity
-				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
-				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+				.post(new URL(HTTP_LOCALHOST + port + CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(jsonTxt);
 		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
 		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'firstName' missing\"}",
 				response.getBody(), false);
@@ -104,14 +104,12 @@ public class CustomerControllerTest {
 	}
 
 	@Test
-	public void testCreateCustomerWithoutSurName() throws JSONException, MalformedURLException, URISyntaxException {
-		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"sex\": \"Female\",\r\n"
-				+ "    \"maritalStatus\":\"single\",\r\n"
-				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
-				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+	public void testCreateCustomerWithoutSurName() throws JSONException, URISyntaxException, IOException {
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test3.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
 		RequestEntity<String> requestEntity = RequestEntity
-				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
-				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+				.post(new URL(HTTP_LOCALHOST + port + CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(jsonTxt);
 		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
 		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'surName' missing\"}",
 				response.getBody(), false);
@@ -119,14 +117,12 @@ public class CustomerControllerTest {
 	}
 
 	@Test
-	public void testCreateCustomerWithoutSex() throws JSONException, MalformedURLException, URISyntaxException {
-		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"surName\": \"Hopkins\",\r\n"
-				+ "    \"maritalStatus\":\"single\",\r\n"
-				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
-				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+	public void testCreateCustomerWithoutSex() throws JSONException, URISyntaxException, IOException {
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test4.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
 		RequestEntity<String> requestEntity = RequestEntity
-				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
-				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+				.post(new URL(HTTP_LOCALHOST + port + CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(jsonTxt);
 		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
 		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'sex' missing\"}",
 				response.getBody(), false);
@@ -134,13 +130,12 @@ public class CustomerControllerTest {
 	}
 
 	@Test
-	public void testCreateCustomerWithoutMailingAddress()
-			throws JSONException, MalformedURLException, URISyntaxException {
-		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"surName\": \"Hopkins\",\r\n"
-				+ "    \"sex\":\"Male\",\r\n" + "    \"maritalStatus\":\"single\"\r\n" + "}";
+	public void testCreateCustomerWithoutMailingAddress() throws JSONException, URISyntaxException, IOException {
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test5.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
 		RequestEntity<String> requestEntity = RequestEntity
-				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
-				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+				.post(new URL(HTTP_LOCALHOST + port + CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(jsonTxt);
 		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
 		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Mandatory parameter 'mailingAddress' missing\"}",
 				response.getBody(), false);
@@ -148,33 +143,30 @@ public class CustomerControllerTest {
 	}
 
 	@Test
-	public void testCreateAndDeleteCustomer() throws MalformedURLException, URISyntaxException {
-		String postBodyJson = "{\r\n" + "    \"firstName\": \"Rajni\",\r\n" + "    \"surName\": \"Minz\",\r\n"
-				+ "    \"sex\": \"Female\",\r\n" + "    \"maritalStatus\":\"single\",\r\n"
-				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
-				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"}\r\n" + "}";
+	public void testCreateCustomerWithCreditRatingOutOfRange() throws JSONException, URISyntaxException, IOException {
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test6.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
 		RequestEntity<String> requestEntity = RequestEntity
-				.post(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
-				.contentType(MediaType.APPLICATION_JSON).body(postBodyJson);
+				.post(new URL(HTTP_LOCALHOST + port + CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(jsonTxt);
+		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+		JSONAssert.assertEquals("{\"status\":400,\"message\":\"Credit Rating should be in the range of 0 to 100\"}",
+				response.getBody(), false);
+		Assert.assertEquals(BAD_REQUEST_MSG, response.getStatusCode().toString());
+	}
+
+	@Test
+	public void testCreateAndDeleteCustomer() throws URISyntaxException, IOException {
+		InputStream is = new FileInputStream("src/main/resources/create_customer_test1.json");
+		String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
+		RequestEntity<String> requestEntity = RequestEntity
+				.post(new URL(HTTP_LOCALHOST + port + CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
+				.contentType(MediaType.APPLICATION_JSON).body(jsonTxt);
 		restTemplate.exchange(requestEntity, String.class);
 		HttpEntity<String> entity = new HttpEntity<>(null, headers);
 		ResponseEntity<String> response = restTemplate.exchange(createURLWithPort("/CustomerManagement/customer/1"),
 				HttpMethod.DELETE, entity, String.class);
 		Assert.assertEquals("202 ACCEPTED", response.getStatusCode().toString());
-	}
-
-	@Test
-	public void testUpdateCustomer() throws MalformedURLException, URISyntaxException {
-		String postBodyJson = "{\r\n" + "    \"firstName\": \"Nick\",\r\n" + "    \"surName\": \"Hopkins\",\r\n"
-				+ "    \"middleName\": \"James\",\r\n" + "    \"sex\": \"Female\",\r\n"
-				+ "    \"maritalStatus\":\"Married\",\r\n"
-				+ "    \"mailingAddress\":{\"unitNo\":\"U31\",\"city\":\"Sydney\",\"state\":\"NSW\","
-				+ "\"country\":\"Australia\",\"pinCode\":\"3064\"},\r\n" + "    \"customerId\": \"1000\"\r\n" + "}";
-		RequestEntity<String> requestEntity = RequestEntity
-				.put(new URL(LOCALHOST_8080_CUSTOMER_MANAGEMENT_CUSTOMER).toURI())
-				.contentType(MediaType.APPLICATION_JSON).body("");
-		ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
-		Assert.assertEquals("200 OK", response.getStatusCode().toString());
 	}
 
 	@Test

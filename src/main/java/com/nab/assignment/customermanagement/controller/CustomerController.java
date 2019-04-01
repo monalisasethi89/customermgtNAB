@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.controller;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.google.common.base.Strings;
 import com.nab.assignment.customermanagement.dto.CustomerDTO;
+import com.nab.assignment.customermanagement.exception.CreditRatingOutOfRangeException;
 import com.nab.assignment.customermanagement.exception.CustomerNotFoundException;
 import com.nab.assignment.customermanagement.exception.MandatoryParamMissingException;
 import com.nab.assignment.customermanagement.service.CustomerManagementServiceIntf;
@@ -48,7 +53,7 @@ public class CustomerController {
 
 	@PostMapping(value = "/customer", consumes = { "application/json" })
 	public ResponseEntity<CustomerDTO> createCustomer(@RequestBody CustomerDTO customer)
-			throws MandatoryParamMissingException {
+			throws MandatoryParamMissingException, CreditRatingOutOfRangeException {
 		if (Strings.isNullOrEmpty(customer.getFirstName()))
 			throw new MandatoryParamMissingException("Mandatory parameter 'firstName' missing");
 		else if (Strings.isNullOrEmpty(customer.getSurName()))
@@ -64,7 +69,7 @@ public class CustomerController {
 
 	@PutMapping(value = "/customer", consumes = { "application/json" })
 	public ResponseEntity<CustomerDTO> updateCustomer(@RequestBody CustomerDTO customer)
-			throws CustomerNotFoundException, MandatoryParamMissingException {
+			throws CustomerNotFoundException, MandatoryParamMissingException, CreditRatingOutOfRangeException {
 		if (customer.getCustomerId() == null)
 			throw new MandatoryParamMissingException("Required Parameter 'customerId' missing");
 		if (customerManagementServiceIntf.isCustomerPresent(customer.getCustomerId()))

@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.entity;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;

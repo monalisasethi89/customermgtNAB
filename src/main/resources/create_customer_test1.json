@@ -1,0 +1,7 @@
+{
+    "firstName": "Rajni",
+    "surName": "Minz",
+    "sex": "Female",
+    "maritalStatus":"single",
+    "mailingAddress":{"unitNo":"U31","city":"Sydney","state":"NSW","country":"Australia","pinCode":"3064"}
+}

@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.exception;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -18,6 +22,14 @@ public class CustomerExceptionHandler {
 
 	@ExceptionHandler
 	public ResponseEntity<CustomerErrorResponse> handleException(MandatoryParamMissingException ine) {
+		CustomerErrorResponse errorResponse = new CustomerErrorResponse();
+		errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+		errorResponse.setMessage(ine.getMessage());
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler
+	public ResponseEntity<CustomerErrorResponse> handleException(CreditRatingOutOfRangeException ine) {
 		CustomerErrorResponse errorResponse = new CustomerErrorResponse();
 		errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
 		errorResponse.setMessage(ine.getMessage());

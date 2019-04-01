@@ -1,5 +1,9 @@
 package com.nab.assignment.customermanagement.entity;
 
+/**
+ * @author Monalisa Sethi
+ *
+ */
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -39,7 +43,7 @@ public class Customer {
 	private Integer creditRating;
 
 	@Column(name = "NAB_CUSTOMER_YN", length = 1)
-	private Boolean isNabCustomer;
+	private String isNabCustomer;
 
 	public Customer() {
 		super();
@@ -117,11 +121,11 @@ public class Customer {
 		this.creditRating = creditRating;
 	}
 
-	public Boolean getIsNabCustomer() {
+	public String getIsNabCustomer() {
 		return isNabCustomer;
 	}
 
-	public void setIsNabCustomer(Boolean isNabCustomer) {
+	public void setIsNabCustomer(String isNabCustomer) {
 		this.isNabCustomer = isNabCustomer;
 	}
 }
